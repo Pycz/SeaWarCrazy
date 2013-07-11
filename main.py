@@ -4,6 +4,17 @@ Created on 11.07.2013
 @author: pycz
 '''
 
+from random import randint
+
+def to_num_coord(strCoord):
+    part1 = ord(strCoord[0]) - ord("a")
+    if len(strCoord) == 2:
+        part2 = int(strCoord[1]) - 1
+    else:
+        part2 = 9
+    return part1 + part2
+        
+
 class State:
     empty = 0
     kill = 1
