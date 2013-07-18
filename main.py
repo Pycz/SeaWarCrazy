@@ -119,6 +119,16 @@ class Map:
             ship_len -= 1
             
             
+    def get_rand_empty_coord(self):
+        coords = []
+        for i in xrange(10):
+            for j in xrange(10):
+                if self.map[i][j].state == State.empty:
+                    coords.append((i,j))
+        try:
+            return random.choice(coords)
+        except:
+            return None
             
     def make_empty(self):
         self.map = [[Cell(State.empty) for j in xrange(10)] for i in xrange(10)]
