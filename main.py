@@ -14,6 +14,9 @@ def to_num_coord(strCoord):    # return in tuple (letter, number)
         part2 = 9
     return (part1, part2)
         
+def to_str_coord(tupleCoord):
+    return chr(tupleCoord[0] + ord('a')) + str(tupleCoord[1] + 1)
+
 
 class State:
     empty = 0
