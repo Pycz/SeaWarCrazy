@@ -161,7 +161,27 @@ class Map:
                 sys.stdout.write(str(cage))
             sys.stdout.write('\n')
         
+    def map_beaten(self):  # have you a 1 non defeated ship?
+        beaten = True
+        for i in xrange(10):
+            for j in xrange(10):
+                if self.map[i][j].state == State.ship:
+                    beaten = False
+                    break
+        return beaten
+    
+    def map_losed(self):  # all ships are detected and beaten?
+        cages_biten = 4 + 3*2 + 2*3 + 4
+        x = 0
+        for i in xrange(10):
+            for j in xrange(10):
+                if self.map[i][j].state == State.kill:
+                    x += 1
         
+        if x >= cages_biten:
+            return True
+        else:
+            return False
 
 class Bot:
     def __init__(self):
@@ -169,6 +189,7 @@ class Bot:
         self.enemy_map = Map()
         self.my_map.fill_with_ships()
         self.strike_coord = None
+        self.name = "Crazy Banana"
         
     def is_my_ship_dead(self, num_coord):
         dead = True
@@ -214,6 +235,12 @@ class Bot:
             self.my_map[coord[0]][coord[1]].state = State.miss
         return message
 
+    def play(self):
+        print self.name
+        print "OK"
+        ######################
+        
+        
 
 if __name__ == '__main__':
     m = Map()
