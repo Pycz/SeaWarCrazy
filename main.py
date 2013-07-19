@@ -1,3 +1,4 @@
+#!/usr/bin/python
 '''
 Created on 11.07.2013
 
@@ -6,8 +7,11 @@ Created on 11.07.2013
 import sys
 import random
 
+graphic_mode = False
+
 def to_num_coord(str_coord):    # return in tuple (letter, number)
     part1 = ord(str_coord[0]) - ord("a")
+    str_coord = str_coord.strip()
     if len(str_coord) == 2:
         part2 = int(str_coord[1]) - 1
     else:
@@ -195,54 +199,102 @@ class Bot:
         dead = True
         coords = [num_coord]
         passed = [num_coord]
-        while dead or coords:
+        while dead and coords:
             num_coord = coords.pop()
-            for i in [(num_coord[0] - 1, num_coord[0]),
-                      (num_coord[0] + 1, num_coord[0]),
-                      (num_coord[0], num_coord[0] - 1),
-                      (num_coord[0], num_coord[0] + 1),
+            for i in [(num_coord[0] - 1, num_coord[1]),
+                      (num_coord[0] + 1, num_coord[1]),
+                      (num_coord[0], num_coord[1] - 1),
+                      (num_coord[0], num_coord[1] + 1),
                      ]:
-                if self.my_map[i[0]][i[1]].state == State.ship:
-                    dead = False
-                    break
-                elif (self.my_map[i[0]][i[1]].state == State.kill) and (i not in passed):
-                    coords.append(i)
-                    passed.append(num_coord)
-                    break
+                if 0 <= i[0] <= 9 and 0 <= i[1] <= 9:
+                    if self.my_map.map[i[0]][i[1]].state == State.ship:
+                        dead = False
+                        break
+                    elif (self.my_map.map[i[0]][i[1]].state == State.kill) and (i not in passed):
+                        coords.append(i)
+                        passed.append(num_coord)
+                        break
             
         return dead
         
     def get_coord_of_strike(self):
         self.strike_coord = self.enemy_map.get_rand_empty_coord()
-        return to_str_coord(self.strike_coord)
+        return to_str_coord(self.strike_coord) + "\n"
     
-    def mark_result_of_strike(self, state_res):
-        self.enemy_map[self.strike_coord[0]][self.strike_coord[1]].state = state_res
+    def mark_result_of_strike(self, str_res):
+        if str_res == "miss\n":
+            state = State.miss
+        elif str_res == "ou\n" or str_res == "kill\n":
+            state = State.kill
+        else:
+            raise "Wrong massage on answer!"
+        self.enemy_map.map[self.strike_coord[0]][self.strike_coord[1]].state = state
         
     def defense_enemy(self, str_coord):
         coord = to_num_coord(str_coord)
-        if (self.my_map[coord[0]][coord[1]].state == State.empty or 
-                                self.my_map[coord[0]][coord[1]].state == State.miss or
-                                self.my_map[coord[0]][coord[1]].state == State.kill):
+        if (self.my_map.map[coord[0]][coord[1]].state == State.empty or 
+                                self.my_map.map[coord[0]][coord[1]].state == State.miss or
+                                self.my_map.map[coord[0]][coord[1]].state == State.kill):
             message = "miss\n"
-            if self.my_map[coord[0]][coord[1]].state == State.empty:
-                self.my_map[coord[0]][coord[1]].state = State.miss
+            if self.my_map.map[coord[0]][coord[1]].state == State.empty:
+                self.my_map.map[coord[0]][coord[1]].state = State.miss
         else:
             if self.is_my_ship_dead(coord):
                 message = "kill\n"
             else:
                 message = "ou\n"
-            self.my_map[coord[0]][coord[1]].state = State.miss
+            self.my_map.map[coord[0]][coord[1]].state = State.kill
         return message
 
     def play(self):
         print self.name
         print "OK"
+        if graphic_mode:
+            self.my_map.show_map()
+            self.enemy_map.show_map()        
         ######################
-        
-        
+        self.first = int(sys.stdin.readline())
+        res = "nend\n"
+        self.turn = "my"
+        if self.first == 1:  # im second
+            answ = self.defense_enemy(sys.stdin.readline())
+            sys.stdout.write(answ)
+            if answ == "kill\n" or answ == "ou\n":
+                self.turn = "him"
+            res = sys.stdin.readline()
+            if res == "win\n" or res == "lose\n":
+                return None
+            
+        if graphic_mode:
+            self.my_map.show_map()
+            self.enemy_map.show_map()
+                
+        # there is my turn (or him, if hi kill or ou
+        while res == "nend\n":
+            if self.turn == "my":
+                sys.stdout.write(self.get_coord_of_strike())
+                answ = sys.stdin.readline()
+                self.mark_result_of_strike(answ)
+                if answ == "miss\n":
+                    self.turn = "him"
+            elif self.turn == "him":
+                answ = self.defense_enemy(sys.stdin.readline())
+                sys.stdout.write(answ)
+                if answ == "miss\n":
+                    self.turn = "my"
+                    
+            res = sys.stdin.readline()
+            
+        if graphic_mode:
+            self.my_map.show_map()
+            self.enemy_map.show_map()
+                   
+        return res
+    
 
 if __name__ == '__main__':
-    m = Map()
-    m.fill_with_ships()
-    m.show_map()
+    b = Bot()
+    if sys.argv[1] == "-g":
+        graphic_mode = True
+    print b.play()
+    
