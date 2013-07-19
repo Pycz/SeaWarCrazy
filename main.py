@@ -285,16 +285,16 @@ class Bot:
                     
             res = sys.stdin.readline()
             
-        if graphic_mode:
-            self.my_map.show_map()
-            self.enemy_map.show_map()
+            if graphic_mode:
+                self.my_map.show_map()
+                self.enemy_map.show_map()
                    
         return res
     
 
 if __name__ == '__main__':
     b = Bot()
-    if sys.argv[1] == "-g":
+    if len(sys.argv) >= 2 and sys.argv[1] == "-g":
         graphic_mode = True
     print b.play()
     
