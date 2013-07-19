@@ -6,16 +6,16 @@ Created on 11.07.2013
 import sys
 import random
 
-def to_num_coord(strCoord):    # return in tuple (letter, number)
-    part1 = ord(strCoord[0]) - ord("a")
-    if len(strCoord) == 2:
-        part2 = int(strCoord[1]) - 1
+def to_num_coord(str_coord):    # return in tuple (letter, number)
+    part1 = ord(str_coord[0]) - ord("a")
+    if len(str_coord) == 2:
+        part2 = int(str_coord[1]) - 1
     else:
         part2 = 9
     return (part1, part2)
         
-def to_str_coord(tupleCoord):
-    return chr(tupleCoord[0] + ord('a')) + str(tupleCoord[1] + 1)
+def to_str_coord(tuple_coord):
+    return chr(tuple_coord[0] + ord('a')) + str(tuple_coord[1] + 1)
 
 
 class State:
@@ -132,6 +132,8 @@ class Map:
             return random.choice(coords)
         except:
             return None
+        
+    
             
     def make_empty(self):
         self.map = [[Cell(State.empty) for j in xrange(10)] for i in xrange(10)]
@@ -162,8 +164,48 @@ class Map:
         
 
 class Bot:
-    pass
-
+    def __init__(self):
+        self.my_map = Map()
+        self.enemy_map = Map()
+        self.my_map.fill_with_ships()
+        self.strike_coord = None
+        
+    def get_coord_of_strike(self):
+        self.strike_coord = self.enemy_map.get_rand_empty_coord()
+        return to_str_coord(self.strike_coord)
+    
+    def mark_result_of_strike(self, state_res):
+        self.enemy_map[self.strike_coord[0]][self.strike_coord[1]].state = state_res
+        
+    def defense_enemy(self, str_coord):
+        coord = to_num_coord(str_coord)
+        if (self.my_map[coord[0]][coord[1]].state == State.empty or 
+                                self.my_map[coord[0]][coord[1]].state == State.miss or
+                                self.my_map[coord[0]][coord[1]].state == State.kill):
+            message = "miss\n"
+        else:
+            pass
+        
+    def is_my_ship_dead(self, num_coord):
+        dead = True
+        coords = [num_coord]
+        passed = [num_coord]
+        while dead or coords:
+            num_coord = coords.pop()
+            for i in [(num_coord[0] - 1, num_coord[0]),
+                      (num_coord[0] + 1, num_coord[0]),
+                      (num_coord[0], num_coord[0] - 1),
+                      (num_coord[0], num_coord[0] + 1),
+                     ]:
+                if self.my_map[i[0]][i[1]].state == State.ship:
+                    dead = False
+                    break
+                elif (self.my_map[i[0]][i[1]].state == State.kill) and (i not in passed):
+                    coords.append(i)
+                    passed.append(num_coord)
+                    break
+            
+        return dead
 
 if __name__ == '__main__':
     m = Map()
