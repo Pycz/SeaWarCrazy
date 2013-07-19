@@ -170,22 +170,6 @@ class Bot:
         self.my_map.fill_with_ships()
         self.strike_coord = None
         
-    def get_coord_of_strike(self):
-        self.strike_coord = self.enemy_map.get_rand_empty_coord()
-        return to_str_coord(self.strike_coord)
-    
-    def mark_result_of_strike(self, state_res):
-        self.enemy_map[self.strike_coord[0]][self.strike_coord[1]].state = state_res
-        
-    def defense_enemy(self, str_coord):
-        coord = to_num_coord(str_coord)
-        if (self.my_map[coord[0]][coord[1]].state == State.empty or 
-                                self.my_map[coord[0]][coord[1]].state == State.miss or
-                                self.my_map[coord[0]][coord[1]].state == State.kill):
-            message = "miss\n"
-        else:
-            pass
-        
     def is_my_ship_dead(self, num_coord):
         dead = True
         coords = [num_coord]
@@ -206,6 +190,27 @@ class Bot:
                     break
             
         return dead
+        
+    def get_coord_of_strike(self):
+        self.strike_coord = self.enemy_map.get_rand_empty_coord()
+        return to_str_coord(self.strike_coord)
+    
+    def mark_result_of_strike(self, state_res):
+        self.enemy_map[self.strike_coord[0]][self.strike_coord[1]].state = state_res
+        
+    def defense_enemy(self, str_coord):
+        coord = to_num_coord(str_coord)
+        if (self.my_map[coord[0]][coord[1]].state == State.empty or 
+                                self.my_map[coord[0]][coord[1]].state == State.miss or
+                                self.my_map[coord[0]][coord[1]].state == State.kill):
+            message = "miss\n"
+        else:
+            if self.is_my_ship_dead(coord):
+                message = "kill\n"
+            else:
+                message = "ou\n"
+        return message
+
 
 if __name__ == '__main__':
     m = Map()
