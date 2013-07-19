@@ -204,11 +204,14 @@ class Bot:
                                 self.my_map[coord[0]][coord[1]].state == State.miss or
                                 self.my_map[coord[0]][coord[1]].state == State.kill):
             message = "miss\n"
+            if self.my_map[coord[0]][coord[1]].state == State.empty:
+                self.my_map[coord[0]][coord[1]].state = State.miss
         else:
             if self.is_my_ship_dead(coord):
                 message = "kill\n"
             else:
                 message = "ou\n"
+            self.my_map[coord[0]][coord[1]].state = State.miss
         return message
 
 
