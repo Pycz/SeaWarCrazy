@@ -121,5 +121,8 @@ if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == "-g":
         graphic_mode = True
     b = Bot(graphic_mode)
-    print b.play()
+    if graphic_mode:
+        print b.play()
+    else:
+        b.play()
     
