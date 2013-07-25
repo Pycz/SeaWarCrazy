@@ -4,8 +4,6 @@ Created on 11.07.2013
 
 @author: pycz
 '''
-import sys
-import random
 
 from map import *
 
@@ -71,8 +69,10 @@ class Bot:
         return message
 
     def play(self):
-        print self.name
-        print "OK"
+        sys.stdout.write(self.name + "\n")
+        sys.stdout.flush()
+        sys.stdout.write("OK" + '\n')
+        sys.stdout.flush()
         if self.graphic_mode:
             self.my_map.show_map()
             self.enemy_map.show_map()        
