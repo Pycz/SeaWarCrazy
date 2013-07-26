@@ -11,6 +11,14 @@ from map import Map, State
 from judge import Judge
 
 
+class superthreading:
+    def __init__(self, funct):
+        self.fun = funct
+        
+    def __call__(self, *args, **kargs):
+        return wx.CallAfter(self.fun, *args, **kargs)
+
+
 class Is_Float_and_time(wx.PyValidator):
     def __init__(self):
         wx.PyValidator.__init__(self)
@@ -121,7 +129,7 @@ class MyFrame(wx.Frame):
             self.Bind(wx.EVT_BUTTON, self.on_add_bot2, self.b_add_bot2)
             
             
-            wildcard = "All files (*.*)|*.*"
+            wildcard = "Python files (*.py)|*.py|All files (*.*)|*.*"
             self.dialog = wx.FileDialog(None, "Choose a bot executable", os.getcwd(),
                                    "", wildcard, wx.OPEN)
             
@@ -205,26 +213,31 @@ class MyFrame(wx.Frame):
                                              size = (70, 30), 
                                              validator = Is_Float_and_time())
             
-            self.b_pause_play = wx.Button(self.panel, -1, "Play", pos = (self.field_left + 30,
+            self.b_pause_play = wx.Button(self.panel, -1, "Pause", pos = (self.field_left + 30,
                                                                                self.field_down + 120),
                                                                         size = (65, 40))
+            
+            self.Bind(wx.EVT_BUTTON, self.on_pause_play, self.b_pause_play)
             
             self.b_stop = wx.Button(self.panel, -1, "STOP", pos = (self.field_left + 95,
                                                                                self.field_down + 120),
                                                                         size = (65, 40))
             
+            self.Bind(wx.EVT_BUTTON, self.on_stop, self.b_stop)
+            
             self.b_flush = wx.Button(self.panel, -1, "Default", pos = (self.field_left + 165,
                                                                                self.field_down + 120),
                                                                         size = (65, 40))
             
+            self.Bind(wx.EVT_BUTTON, self.on_default, self.b_flush)
             
-            self.g_progress = wx.Gauge (self.panel, -1, 100, 
+            self.g_progress = wx.Gauge(self.panel, -1, 100, 
                                         pos = (self.field_left + 30, self.field_down + 70),
                                         size = (200, 40),
                                         style = wx.GA_HORIZONTAL)
             
             self.status_bar = self.CreateStatusBar()
-            self.status_bar.SetStatusText("Hello there!")
+            self.status_bar.SetStatusText('Hello there! Choose bots and click "START!"')
             
             self.lock = threading.Lock()
             self.running = True
@@ -236,19 +249,148 @@ class MyFrame(wx.Frame):
             
             
             self.Bind(wx.EVT_CLOSE, self.on_close, self)
+         
+            self.enable_disable_set = [self.b_add_bot1,
+                                       self.b_add_bot2,
+                                       self.b_start_chemp,
+                                       self.b_flush,
+                                       self.c_round_pause,
+                                       self.c_rounds,
+                                       self.c_turn_pause]
             
+            self.play_thread_alive = [True, ]
+            self.str_for_statusbar = 'Hello! Choose bots and press "START!"'
+         
+            self.make_elements_active(False, *[self.b_pause_play, self.b_stop])
+        
+        def make_elements_active(self, active = False, *els):
+            for el in els:
+                el.Enable(active) 
+                
+        def on_stop(self, event):
+            self.play_thread_alive[0] = False
+            
+               
+        def on_default(self, event):
+            self.flush_all_to_default()
+            self.str_for_statusbar = "All settings flushed to default"
+        
+        def on_pause_play(self, event):
+            if self.b_pause_play.GetLabel() == "Play":
+                self.b_pause_play.SetLabel("Pause")
+                self.str_for_statusbar = "Computing continued... "
+                self.lock.release()
+            else:
+                self.b_pause_play.SetLabel("Play")
+                self.str_for_statusbar = "Computing paused... "
+                self.lock.acquire()
             
         def on_close(self, event):
             self.running = False
             wx.Exit()
-                
+        
+        def flush_for_start(self):
+            self.make_elements_active(True, *self.enable_disable_set)
+            self.b_pause_play.SetLabel("Pause")
+            
+            
+            self.lock.acquire()
+            self.winlist[0] = 0
+            self.winlist[1] = 0
+            self.winlist[2] = 0
+            self.maplist[0] = Map()
+            self.maplist[1] = Map()
+            self.maplist[2] = 0
+            self.lock.release()
+            
+            self.start_judge()
+            self.l_bot1_wins.SetLabel("0")
+            self.l_bot2_wins.SetLabel("0")
+            
+            
+            self.g_progress.SetRange(100)
+            self.g_progress.SetValue(0)  
+                          
+        def flush_all_to_default(self):
+            self.make_elements_active(True, *self.enable_disable_set)
+            self.b_pause_play.SetLabel("Pause")
+            self.judge = None
+            self.bot1_path = None
+            self.bot2_path = None
+            self.bot1_name = None
+            self.bot2_name = None
+            
+            self.lock.acquire()
+            self.winlist[0] = 0
+            self.winlist[1] = 0
+            self.winlist[2] = 0
+            self.maplist[0] = Map()
+            self.maplist[1] = Map()
+            self.maplist[2] = 0
+            self.lock.release()
+            
+            self.l_bot1_name.SetLabel("?BOT1?")
+            self.l_bot2_name.SetLabel("?BOT2?")
+            self.l_bot1_wins.SetLabel("0")
+            self.l_bot2_wins.SetLabel("0")
+            
+            self.b_add_bot1.SetLabel("Choose bot 1")
+            self.b_add_bot2.SetLabel("Choose bot 2")
+            
+            self.c_round_pause.SetValue("0")
+            self.c_rounds.SetValue(1)
+            self.c_turn_pause.SetValue("0")
+            
+            self.g_progress.SetRange(100)
+            self.g_progress.SetValue(0)
+            
+            
+            #self.lock.release()
+               
+        def get_round_pause(self):
+            x = self.c_round_pause.GetValue()
+            try:
+                x = float(x)
+                if 0 <= x <= 10:
+                    return x
+                else:
+                    self.c_round_pause.SetValue(str(min(x, 10) if x > 10 else max(0, x)))
+                    self.str_for_statusbar = "Warning! Pause must be between 0 and 10 sec! "
+                    return float(min(x, 10) if x > 10 else max(0, x))
+            except:
+                self.str_for_statusbar = "Error! Pause must be a float number between 0 and 10 sec! "
+                return None
+            
+        def get_turn_pause(self):
+            x = self.c_turn_pause.GetValue()
+            try:
+                x = float(x)
+                if 0 <= x <= 10:
+                    return x
+                else:
+                    self.c_turn_pause.SetValue(str(min(x, 10) if x > 10 else max(0, x)))
+                    self.str_for_statusbar = "Warning! Pause must be between 0 and 10 sec! "
+                    return float(min(x, 10) if x > 10 else max(0, x))
+            except:
+                self.str_for_statusbar = "Error! Pause must be a float number between 0 and 10 sec! "
+                return None        
+                    
         def start_judge(self):
             if self.bot1_path and self.bot2_path:
-                self.judge = Judge(self.bot1_path, self.bot2_path, 0.05, 0.5, self.lock)
-                self.bot1_name = self.judge.bot1.name
-                self.l_bot1_name.SetLabel(self.bot1_name + " (1)")
-                self.bot2_name = self.judge.bot2.name
-                self.l_bot2_name.SetLabel(self.bot2_name + " (2)")
+                try:
+                    self.play_thread_alive[0] = True
+                    self.judge = Judge(self.bot1_path, self.bot2_path, 
+                                   self.get_turn_pause(),
+                                   self.get_round_pause(), 
+                                   self.lock,
+                                   self.play_thread_alive)
+                    self.bot1_name = self.judge.bot1.name
+                    self.l_bot1_name.SetLabel(self.bot1_name + " (1)")
+                    self.bot2_name = self.judge.bot2.name
+                    self.l_bot2_name.SetLabel(self.bot2_name + " (2)")
+                except:
+                    self.flush_all_to_default()
+                    self.str_for_statusbar = "Error! You choose wrong file or file isn't a Bot program"
         
         def on_add_bot1(self, event):
             if self.b_add_bot1.GetLabel() != "OK":
@@ -256,23 +398,42 @@ class MyFrame(wx.Frame):
                     self.bot1_path = self.dialog.GetPath()
                     self.b_add_bot1.SetLabel("OK")
                     self.start_judge()
-                    
-                    
+                    self.str_for_statusbar = "Bot 1 choosed"
+                                       
         def on_add_bot2(self, event):
             if self.b_add_bot2.GetLabel() != "OK":
                 if self.dialog.ShowModal() == wx.ID_OK:
                     self.bot2_path = self.dialog.GetPath()
                     self.b_add_bot2.SetLabel("OK")
                     self.start_judge()
-         
+                    self.str_for_statusbar = "Bot 2 choosed"
+                
+        def start_chemp(self, *args):
+            self.flush_for_start()
+            self.make_elements_active(False, *self.enable_disable_set)
+            self.make_elements_active(True, *[self.b_pause_play, self.b_stop])
+            self.g_progress.SetRange(args[0])
+            self.g_progress.SetValue(0)
+            self.str_for_statusbar = "Start computing..."
+            try:
+                self.judge.play_championship(*args)
+            except:
+                pass
+            self.make_elements_active(True, *self.enable_disable_set)
+            self.make_elements_active(False, *[self.b_pause_play, self.b_stop])
+            if not self.play_thread_alive[0]:
+                self.str_for_statusbar = "Stopped."
+            else:
+                self.str_for_statusbar = "Complete!"
         
         def on_start_chemp(self, event):
             if self.judge:
-                t = threading.Thread(target = self.judge.play_championship,
-                                      args = (10, self.maplist, self.winlist))
+                t = threading.Thread(target = self.start_chemp,
+                                      args = (self.c_rounds.GetValue(), self.maplist, self.winlist))
                 #self.judge.play_championship(3, self.maplist, self.winlist)
                 t.start()
-                    
+                
+                           
         def refresh(self):
             qmap = 0
             qwin = 0
@@ -288,7 +449,10 @@ class MyFrame(wx.Frame):
                 if self.winlist[2] != qwin:
                     qwin = self.winlist[2]
                     wx.CallAfter(self.l_bot1_wins.SetLabel, str(self.winlist[0]))
-                    wx.CallAfter(self.l_bot2_wins.SetLabel, str(self.winlist[1]))                       
+                    wx.CallAfter(self.l_bot2_wins.SetLabel, str(self.winlist[1])) 
+                
+                wx.CallAfter(self.g_progress.SetValue, self.winlist[2]) 
+                wx.CallAfter(self.status_bar.SetStatusText, self.str_for_statusbar)                     
                 wx.CallAfter(self.field1.refresh)
                 wx.CallAfter(self.field2.refresh)
                 #self.Refresh()

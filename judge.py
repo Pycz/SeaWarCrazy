@@ -6,6 +6,7 @@ Created on 20.07.2013
 '''
 
 import pty, time
+from threading import Lock
 from map import *
 from random import randint
 import sys, os, signal
@@ -63,17 +64,21 @@ class Bot:
         
 class Judge:
 
-    def __init__(self, bot1_path, bot2_path, turn_pause = 0, game_pause = 0, lock = None):
+    def __init__(self, bot1_path, bot2_path, turn_pause = 0, game_pause = 0, lock = Lock(), alive = [True, ]):
         self.bot1_path = bot1_path
         self.bot2_path = bot2_path 
         
+        self.alive = alive
         self.lock = lock
         self.wins = [0, 0]
         self.turn_pause = turn_pause
         self.game_pause = game_pause
         
-        self.bot1 = Bot(self.bot1_path, 0)
-        self.bot2 = Bot(self.bot2_path, 1)
+        try:
+            self.bot1 = Bot(self.bot1_path, 0)
+            self.bot2 = Bot(self.bot2_path, 1)
+        except:
+            raise
         
     
     def _go(self, bots):
@@ -122,16 +127,19 @@ class Judge:
                 order = [self.bot2, self.bot1]
             backup_order = order    
             while not (order == 0 or order == 1):
-                backup_order = order
-                
-                order = self._go(order)
-                
-                time.sleep(self.turn_pause)
+                if self.alive[0]:
+                    backup_order = order
+                    
+                    order = self._go(order)
+                    
+                    time.sleep(self.turn_pause)
+                else:
+                    raise Exception("End of thread")
                 
             return backup_order[order]  # winner!
         
         else:
-            print "Bots are dont ready: B1 say %s ; B2 say %s \n" % st1, st2
+            print "Bots are dont ready: B1 say %s ; B2 say %s \n" % (st1, st2)
         
     def play_championship(self, rounds, maplist = [None, None, 0], winlist = [None, None, 0]): # kostili
         print "Begin\n"
@@ -145,37 +153,40 @@ class Judge:
         
         time.sleep(self.game_pause)
         for i in xrange(rounds):
-            print "Round %d" % (i+1)
-            
-            self.lock.acquire()
-            self.bot1 = Bot(self.bot1_path, 0)
-            self.bot2 = Bot(self.bot2_path, 1)
-            maplist[0] = self.bot1.get_map()
-            maplist[1] = self.bot2.get_map()
-            maplist[2] += 1
-            self.lock.release()
-            
-            winner = self.play_game()
-            if winner:
-                print self.bot1.name + " (" + str(self.bot1.num + 1) + ") map:"
-                self.bot1.map.show_map()
-                print "\n" + self.bot2.name + " (" + str(self.bot2.num + 1) + ") map:"
-                self.bot2.map.show_map()
-                print "\nWin bot %d\n" % (winner.num + 1)
-                self.wins[winner.num] += 1
+            if self.alive[0]:
+                print "Round %d" % (i+1)
                 
                 self.lock.acquire()
-                winlist[0] = self.wins[0]
-                winlist[1] = self.wins[1]
-                winlist[2] += 1
+                self.bot1 = Bot(self.bot1_path, 0)
+                self.bot2 = Bot(self.bot2_path, 1)
+                maplist[0] = self.bot1.get_map()
+                maplist[1] = self.bot2.get_map()
+                maplist[2] += 1
                 self.lock.release()
                 
+                winner = self.play_game()
+                if winner:
+                    print self.bot1.name + " (" + str(self.bot1.num + 1) + ") map:"
+                    self.bot1.map.show_map()
+                    print "\n" + self.bot2.name + " (" + str(self.bot2.num + 1) + ") map:"
+                    self.bot2.map.show_map()
+                    print "\nWin bot %d\n" % (winner.num + 1)
+                    self.wins[winner.num] += 1
+                    
+                    self.lock.acquire()
+                    winlist[0] = self.wins[0]
+                    winlist[1] = self.wins[1]
+                    winlist[2] += 1
+                    self.lock.release()
+                    
+                else:
+                    print "Game don't played"
+                time.sleep(self.game_pause)
             else:
-                print "Game don't played"
-            time.sleep(self.game_pause)
+                raise Exception("End of thread")
         
         print 'Bot 1: %d \nBot 2: %d ' % (self.wins[0], self.wins[1])
         
 if __name__ == '__main__':
-    j = Judge("./bot.py", "./bot.py")
+    j = Judge("./shooted.bmp", "./bot.py")
     j.play_championship(10)
