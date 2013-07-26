@@ -5,7 +5,7 @@ Created on 20.07.2013
 @author: pycz
 '''
 
-import pty
+import pty, time
 from map import *
 from random import randint
 import sys, os, signal
@@ -56,17 +56,25 @@ class Bot:
             os.kill(self.bot_pid, signal.SIGKILL)
         except:
             pass
+        
+    def get_map(self):
+        return self.map
 
         
 class Judge:
 
-    def __init__(self, bot1_path, bot2_path):
+    def __init__(self, bot1_path, bot2_path, turn_pause = 0, game_pause = 0, lock = None):
         self.bot1_path = bot1_path
         self.bot2_path = bot2_path 
         
+        self.lock = lock
         self.wins = [0, 0]
-        self.turn_pause = 0
-        self.game_pause = 0
+        self.turn_pause = turn_pause
+        self.game_pause = game_pause
+        
+        self.bot1 = Bot(self.bot1_path, 0)
+        self.bot2 = Bot(self.bot2_path, 1)
+        
     
     def _go(self, bots):
         bot1coord = bots[0].readline()
@@ -74,10 +82,14 @@ class Judge:
         bot2answ = bots[1].readline()
         bots[0].writeline(bot2answ)
         
+        
+        self.lock.acquire()
         if bot2answ == "miss":
             bots[1].map.map[to_num_coord(bot1coord)[0]][to_num_coord(bot1coord)[1]].state = State.miss
         else:
             bots[1].map.map[to_num_coord(bot1coord)[0]][to_num_coord(bot1coord)[1]].state = State.kill
+        self.lock.release()
+        
         
         if bots[0].map.map_losed():
             bots[0].writeline("lose")
@@ -111,26 +123,59 @@ class Judge:
             backup_order = order    
             while not (order == 0 or order == 1):
                 backup_order = order
+                
                 order = self._go(order)
+                
+                time.sleep(self.turn_pause)
                 
             return backup_order[order]  # winner!
         
         else:
             print "Bots are dont ready: B1 say %s ; B2 say %s \n" % st1, st2
         
-    def play_championship(self, rounds):
+    def play_championship(self, rounds, maplist = [None, None, 0], winlist = [None, None, 0]): # kostili
         print "Begin\n"
+        
+        self.lock.acquire()
         self.wins = [0, 0]
+        winlist[0] = self.wins[0]
+        winlist[1] = self.wins[1]
+        winlist[2] = 0
+        self.lock.release()
+        
+        time.sleep(self.game_pause)
         for i in xrange(rounds):
             print "Round %d" % (i+1)
+            
+            self.lock.acquire()
             self.bot1 = Bot(self.bot1_path, 0)
             self.bot2 = Bot(self.bot2_path, 1)
+            maplist[0] = self.bot1.get_map()
+            maplist[1] = self.bot2.get_map()
+            maplist[2] += 1
+            self.lock.release()
+            
             winner = self.play_game()
-            print "Win bot %d\n" % (winner.num + 1)
-            self.wins[winner.num] += 1
+            if winner:
+                print self.bot1.name + " (" + str(self.bot1.num + 1) + ") map:"
+                self.bot1.map.show_map()
+                print "\n" + self.bot2.name + " (" + str(self.bot2.num + 1) + ") map:"
+                self.bot2.map.show_map()
+                print "\nWin bot %d\n" % (winner.num + 1)
+                self.wins[winner.num] += 1
+                
+                self.lock.acquire()
+                winlist[0] = self.wins[0]
+                winlist[1] = self.wins[1]
+                winlist[2] += 1
+                self.lock.release()
+                
+            else:
+                print "Game don't played"
+            time.sleep(self.game_pause)
         
         print 'Bot 1: %d \nBot 2: %d ' % (self.wins[0], self.wins[1])
         
 if __name__ == '__main__':
     j = Judge("./bot.py", "./bot.py")
-    j.play_championship(100)
+    j.play_championship(10)

@@ -135,7 +135,12 @@ class Map:
         except:
             return None
         
+    def get_state_by_coords(self, i, j):
+        return self.map[i][j].state
     
+    
+    def set_state_by_coords(self, i, j, st):
+        self.map[i][j].state = st
             
     def make_empty(self):
         self.map = [[Cell(State.empty) for j in xrange(10)] for i in xrange(10)]
@@ -156,7 +161,7 @@ class Map:
                 elif state_now == State.kill:
                     cage = "X"
                 elif state_now == State.miss:
-                    cage = "O"
+                    cage = "-"
                 else:
                     cage = "#"
                 
