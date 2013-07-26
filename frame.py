@@ -98,7 +98,7 @@ class Field:
 class MyFrame(wx.Frame):
     
         def __init__(self):
-            wx.Frame.__init__(self, None, -1, size=(790, 610), title = "SeaWar Judge", pos = (300, 100))
+            wx.Frame.__init__(self, None, -1, size=(790, 620), title = "SeaWar Judge", pos = (300, 60))
             self.panel = wx.Panel(self, -1)
             self.judge = None
             self.field_top = 30
@@ -204,6 +204,28 @@ class MyFrame(wx.Frame):
                                              pos = (self.field_left + 630, self.field_down + 135),
                                              size = (70, 30), 
                                              validator = Is_Float_and_time())
+            
+            self.b_pause_play = wx.Button(self.panel, -1, "Play", pos = (self.field_left + 30,
+                                                                               self.field_down + 120),
+                                                                        size = (65, 40))
+            
+            self.b_stop = wx.Button(self.panel, -1, "STOP", pos = (self.field_left + 95,
+                                                                               self.field_down + 120),
+                                                                        size = (65, 40))
+            
+            self.b_flush = wx.Button(self.panel, -1, "Default", pos = (self.field_left + 165,
+                                                                               self.field_down + 120),
+                                                                        size = (65, 40))
+            
+            
+            self.g_progress = wx.Gauge (self.panel, -1, 100, 
+                                        pos = (self.field_left + 30, self.field_down + 70),
+                                        size = (200, 40),
+                                        style = wx.GA_HORIZONTAL)
+            
+            self.status_bar = self.CreateStatusBar()
+            self.status_bar.SetStatusText("Hello there!")
+            
             self.lock = threading.Lock()
             self.running = True
             
