@@ -73,7 +73,8 @@ class Judge:
         self.wins = [0, 0]
         self.turn_pause = turn_pause
         self.game_pause = game_pause
-        
+        self.bot1 = None
+        self.bot2 = None
         try:
             self.bot1 = Bot(self.bot1_path, 0)
             self.bot2 = Bot(self.bot2_path, 1)
@@ -186,6 +187,12 @@ class Judge:
                 raise Exception("End of thread")
         
         print 'Bot 1: %d \nBot 2: %d ' % (self.wins[0], self.wins[1])
+        
+    def __del__(self):
+        if self.bot1:
+            self.bot1.__del__()
+        if self.bot2:
+            self.bot2.__del__()
         
 if __name__ == '__main__':
     j = Judge("./shooted.bmp", "./bot.py")
