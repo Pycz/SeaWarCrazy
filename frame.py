@@ -265,7 +265,7 @@ class MyFrame(wx.Frame):
         
         def make_elements_active(self, active = False, *els):
             for el in els:
-                el.Enable(active) 
+                wx.CallAfter(el.Enable, active) 
                 
         def on_stop(self, event):
             self.play_thread_alive[0] = False
@@ -379,6 +379,8 @@ class MyFrame(wx.Frame):
             if self.bot1_path and self.bot2_path:
                 try:
                     self.play_thread_alive[0] = True
+                    if self.judge:
+                        self.judge.__del__()
                     self.judge = Judge(self.bot1_path, self.bot2_path, 
                                    self.get_turn_pause(),
                                    self.get_round_pause(), 
