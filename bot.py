@@ -20,7 +20,7 @@ class Bot:
     def is_my_ship_dead(self, num_coord):
         dead = True
         coords = [num_coord]
-        passed = [num_coord]
+        passed = []
         while dead and coords:
             num_coord = coords.pop()
             for i in [(num_coord[0] - 1, num_coord[1]),
@@ -35,7 +35,6 @@ class Bot:
                     elif (self.my_map.map[i[0]][i[1]].state == State.kill) and (i not in passed):
                         coords.append(i)
                         passed.append(num_coord)
-                        break
             
         return dead
         
@@ -49,7 +48,7 @@ class Bot:
         elif str_res == "ou\n" or str_res == "kill\n":
             state = State.kill
         else:
-            raise "Wrong massage on answer!"
+            raise "Wrong message on answer!"
         self.enemy_map.map[self.strike_coord[0]][self.strike_coord[1]].state = state
         
     def defense_enemy(self, str_coord):
@@ -61,11 +60,11 @@ class Bot:
             if self.my_map.map[coord[0]][coord[1]].state == State.empty:
                 self.my_map.map[coord[0]][coord[1]].state = State.miss
         else:
+            self.my_map.map[coord[0]][coord[1]].state = State.kill
             if self.is_my_ship_dead(coord):
                 message = "kill\n"
             else:
                 message = "ou\n"
-            self.my_map.map[coord[0]][coord[1]].state = State.kill
         return message
 
     def play(self):
