@@ -21,8 +21,8 @@ temp_pid, temp_fd = pty.fork()
 
 if temp_pid == 0:
     os.execl("./test.py", "./test.py")
-    
-    
+
+
 '''
 s = ''
 
@@ -78,9 +78,9 @@ except:
 try:
     test_out.close()
 except:
-    pass   
+    pass
 
-    
+
 try:
     os.kill(temp_pid, signal.SIGTERM)
 except:

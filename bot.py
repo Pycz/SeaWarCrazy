@@ -16,7 +16,7 @@ class Bot:
         self.strike_coord = None
         self.name = "Crazy Banana"
         self.graphic_mode = mode
-        
+
     def is_my_ship_dead(self, num_coord):
         dead = True
         coords = [num_coord]
@@ -35,13 +35,13 @@ class Bot:
                     elif (self.my_map.map[i[0]][i[1]].state == State.kill) and (i not in passed):
                         coords.append(i)
                         passed.append(num_coord)
-            
+
         return dead
-        
+
     def get_coord_of_strike(self):
         self.strike_coord = self.enemy_map.get_rand_empty_coord()
         return to_str_coord(self.strike_coord) + "\n"
-    
+
     def mark_result_of_strike(self, str_res):
         if str_res == "miss\n":
             state = State.miss
@@ -50,10 +50,10 @@ class Bot:
         else:
             raise "Wrong message on answer!"
         self.enemy_map.map[self.strike_coord[0]][self.strike_coord[1]].state = state
-        
+
     def defense_enemy(self, str_coord):
         coord = to_num_coord(str_coord)
-        if (self.my_map.map[coord[0]][coord[1]].state == State.empty or 
+        if (self.my_map.map[coord[0]][coord[1]].state == State.empty or
                                 self.my_map.map[coord[0]][coord[1]].state == State.miss or
                                 self.my_map.map[coord[0]][coord[1]].state == State.kill):
             message = "miss\n"
@@ -74,7 +74,7 @@ class Bot:
         sys.stdout.flush()
         if self.graphic_mode:
             self.my_map.show_map()
-            self.enemy_map.show_map()        
+            self.enemy_map.show_map()
         ######################
         self.first = int(sys.stdin.readline())
         res = "nend\n"
@@ -87,11 +87,11 @@ class Bot:
             res = sys.stdin.readline()
             if res == "win\n" or res == "lose\n":
                 return None
-            
+
         if self.graphic_mode:
             self.my_map.show_map()
             self.enemy_map.show_map()
-                
+
         # there is my turn (or him, if hi kill or ou
         while res == "nend\n":
             if self.turn == "my":
@@ -105,15 +105,15 @@ class Bot:
                 sys.stdout.write(answ)
                 if answ == "miss\n":
                     self.turn = "my"
-                    
+
             res = sys.stdin.readline()
-            
+
             if self.graphic_mode:
                 self.my_map.show_map()
                 self.enemy_map.show_map()
-                   
+
         return res
-    
+
 
 if __name__ == '__main__':
     graphic_mode = False
@@ -124,4 +124,4 @@ if __name__ == '__main__':
         print b.play()
     else:
         b.play()
-    
+
