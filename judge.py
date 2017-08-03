@@ -5,19 +5,31 @@ Created on 20.07.2013
 @author: pycz
 '''
 
-import pty, time
+import pty
+import time
+import re
+
 from threading import Lock
 from map import *
 from random import randint
-import sys, os, signal
+import os
+import signal
+
+jar_re = re.compile(r".*\.jar$")
+
 
 class IO_discreptors:
     def __init__(self):
         self.stdin = None
         self.stdout = None
 
+
 class Bot:
     def __init__(self, bot_path, num):
+        # java jar support
+        if jar_re.match(bot_path):
+            bot_path = "java -jar " + bot_path
+
         self.bot_path = bot_path
 
         self.bot = IO_discreptors()
@@ -64,7 +76,7 @@ class Bot:
 
 class Judge:
 
-    def __init__(self, bot1_path, bot2_path, turn_pause = 0, game_pause = 0, lock = Lock(), alive = [True, ]):
+    def __init__(self, bot1_path, bot2_path, turn_pause=0, game_pause=0, lock=Lock(), alive=[True, ]):
         self.bot1_path = bot1_path
         self.bot2_path = bot2_path
 
@@ -81,13 +93,11 @@ class Judge:
         except:
             raise
 
-
     def _go(self, bots):
         bot1coord = bots[0].readline()
         bots[1].writeline(bot1coord)
         bot2answ = bots[1].readline()
         bots[0].writeline(bot2answ)
-
 
         self.lock.acquire()
         if bot2answ == "miss":
@@ -95,7 +105,6 @@ class Judge:
         else:
             bots[1].map.map[to_num_coord(bot1coord)[0]][to_num_coord(bot1coord)[1]].state = State.kill
         self.lock.release()
-
 
         if bots[0].map.map_losed():
             bots[0].writeline("lose")
@@ -118,8 +127,8 @@ class Judge:
         st2 = self.bot2.readline()
 
         if st1 == "OK" and st2 == "OK":
-            #can begin
-            who_first = randint(0,1)
+            # can begin
+            who_first = randint(0, 1)
             self.bot1.writeline(str(who_first))
             self.bot2.writeline(str(1 - who_first))
             if who_first == 0:
@@ -142,7 +151,7 @@ class Judge:
         else:
             print "Bots are dont ready: B1 say %s ; B2 say %s \n" % (st1, st2)
 
-    def play_championship(self, rounds, maplist = [None, None, 0], winlist = [None, None, 0]): # kostili
+    def play_championship(self, rounds, maplist=[None, None, 0], winlist=[None, None, 0]):  # kostili
         print "Begin\n"
 
         self.lock.acquire()
@@ -155,7 +164,7 @@ class Judge:
         time.sleep(self.game_pause)
         for i in xrange(rounds):
             if self.alive[0]:
-                print "Round %d" % (i+1)
+                print "Round %d" % (i + 1)
 
                 self.lock.acquire()
                 self.bot1 = Bot(self.bot1_path, 0)
@@ -193,6 +202,7 @@ class Judge:
             self.bot1.__del__()
         if self.bot2:
             self.bot2.__del__()
+
 
 if __name__ == '__main__':
     j = Judge("./shooted.bmp", "./bot.py")
